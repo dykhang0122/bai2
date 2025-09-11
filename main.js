@@ -1,32 +1,12 @@
-// Gọi hàm load khi chạy
-LoadData();
-
-// GET: domain:port/posts
-// GET: domain:port/posts/id
 async function LoadData() {
-    try {
-        const data = await fetch('http://localhost:3000/posts');
-        const posts = await data.json();
-        for (const post of posts) {
-            let body = document.getElementById("body");
+    let response = await fetch('http://localhost:3000/posts');
+    let posts = await response.json();
+    let body = document.getElementById("posts-table-body");
+    body.innerHTML = ""; // Xóa dữ liệu cũ trước khi load mới
+    for (const post of posts) {
+        if (post.isDelete !== "true") { // Chỉ hiển thị bài chưa bị xóa
             body.innerHTML += convertDataToHTML(post);
         }
-    } catch (err) {
-        console.error("Lỗi khi load dữ liệu:", err);
-    }
-}
-
-// Hàm này cũ dùng promise -> có thể xoá hoặc đổi tương tự
-async function LoadDataA() {
-    try {
-        const data = await fetch('http://localhost:3000/posts');
-        const posts = await data.json();
-        for (const post of posts) {
-            let body = document.getElementById("body");
-            body.innerHTML += convertDataToHTML(post);
-        }
-    } catch (err) {
-        console.error("Lỗi khi load dữ liệu:", err);
     }
 }
 
@@ -35,68 +15,66 @@ function convertDataToHTML(post) {
     result += "<td>" + post.id + "</td>";
     result += "<td>" + post.title + "</td>";
     result += "<td>" + post.views + "</td>";
-    result += "<td><input type='submit' value='Delete' onclick='Delete(" + post.id + ")'></input></td>";
+    result += `<td><button onclick="Delete('${post.id}')">Delete</button></td>`;
     result += "</tr>";
     return result;
 }
 
-// POST + PUT: domain:port/posts + body
+console.log("Hello from main.js");
+
+// Save data to json-server
 async function SaveData() {
+    let idInput = document.getElementById("id").value;
+    let title = document.getElementById("title").value;
+    let views = document.getElementById("views").value;
+
+    let id = idInput;
+    if (!idInput) {
+        // Nếu không nhập id, tự động tăng id
+        let response = await fetch('http://localhost:3000/posts');
+        let posts = await response.json();
+        let maxId = posts.reduce((max, post) => Math.max(max, Number(post.id)), 0);
+        id = String(maxId + 1);
+    }
+
+    let dataObj = { id, title, views };
+
     try {
-        let id = document.getElementById("id").value;
-        let title = document.getElementById("title").value;
-        let view = document.getElementById("view").value;
-
-        // Kiểm tra xem có tồn tại id chưa
-        const check = await fetch("http://localhost:3000/posts/" + id);
-
-        if (check.ok) {
-            // Nếu có -> PUT (update)
-            let dataObj = {
-                title: title,
-                views: view
-            };
-
-            const res = await fetch('http://localhost:3000/posts/' + id, {
-                method: 'PUT',
-                body: JSON.stringify(dataObj),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
-
-            console.log("Update:", res.status);
-        } else {
-            // Nếu chưa có -> POST (tạo mới)
-            let dataObj = {
-                id: id,
-                title: title,
-                views: view
-            };
-
-            const res = await fetch('http://localhost:3000/posts', {
-                method: 'POST',
-                body: JSON.stringify(dataObj),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
-
-            console.log("Create:", res.status);
-        }
-    } catch (err) {
-        console.error("Lỗi khi lưu dữ liệu:", err);
+        let res = await fetch('http://localhost:3000/posts/' + id);
+        let fetchOptions = {
+            method: res.ok ? 'PUT' : 'POST',
+            body: JSON.stringify(dataObj),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+        let url = res.ok ? 'http://localhost:3000/posts/' + id : 'http://localhost:3000/posts';
+        let saveRes = await fetch(url, fetchOptions);
+        let response = await saveRes.json();
+        console.log('Success:', response);
+        await LoadData(); // Reload bảng sau khi lưu
+    } catch (error) {
+        console.error('Error:', error);
     }
 }
 
-// DELETE: domain:port/posts/id
 async function Delete(id) {
     try {
+        // Lấy dữ liệu bài viết hiện tại
+        let res = await fetch('http://localhost:3000/posts/' + id);
+        let post = await res.json();
+        // Thêm trường isDelete: "true"
+        post.isDelete = "true";
+        // Gửi yêu cầu cập nhật
         await fetch('http://localhost:3000/posts/' + id, {
-            method: 'DELETE'
+            method: 'PUT',
+            body: JSON.stringify(post),
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
-        console.log("Delete thành công");
-    } catch (err) {
-        console.error("Lỗi khi delete:", err);
+        await LoadData(); // Reload bảng sau khi "xóa mềm"
+    } catch (error) {
+        console.error('Error:', error);
     }
 }

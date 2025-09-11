@@ -1,31 +1,42 @@
 {
   "posts": [
     {
+      "id": "1",
+      "title": "a title2",
+      "views": "101",
+      "isDelete": "true"
+    },
+    {
       "id": "2",
-      "title": "another title",
-      "views": 200
+      "title": "kkk",
+      "views": "123"
     },
     {
       "id": "3",
-      "title": "had",
-      "views": "1000"
+      "title": "hahaha",
+      "views": "222"
     },
     {
-      "id": "1 ",
-      "title": "kka",
-      "views": "12313"
+      "id": "4",
+      "title": "ad",
+      "views": "1200"
+    },
+    {
+      "id": "5",
+      "title": "ddd",
+      "views": "444"
     }
   ],
   "comments": [
     {
       "id": "1",
       "text": "a comment about post 1",
-      "postId": null
+      "postId": "1"
     },
     {
       "id": "2",
       "text": "another comment about post 1",
-      "postId": null
+      "postId": "1"
     }
   ],
   "profile": {
